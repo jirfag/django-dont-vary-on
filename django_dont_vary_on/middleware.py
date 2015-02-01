@@ -1,5 +1,6 @@
 # encoding: utf-8
 import re
+from django.conf import settings
 
 cc_delim_re = re.compile(r'\s*,\s*')
 
@@ -20,9 +21,11 @@ class RemoveUnneededVaryHeadersMiddleware(object):
     """
 
     def process_response(self, request, response):
-        if len(getattr(response, 'only_vary_on', [])) > 0:
+        only_vary_on = getattr(response, 'only_vary_on', []) or getattr(settings, 'DJANGO_DVO_ONLY_VARY_ON', [])
+        dont_vary_on = getattr(response, 'dont_vary_on', []) or getattr(settings, 'DJANGO_DVO_DONT_VARY_ON', [])
+        if only_vary_on:
             response['Vary'] = ", ".join(sorted(set(response.only_vary_on)))
-        elif len(getattr(response, 'dont_vary_on', [])) > 0:
+        elif dont_vary_on:
             remove_vary_headers(response, response.dont_vary_on)
         else:
             # Nothing to do here
